@@ -1,0 +1,71 @@
+# Entorno
+.env
+.env.local
+.env.*.local
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+venv/
+.venv/
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# Logs
+*.log
+app.log
+*.pid
+
+# Testing
+.pytest_cache/
+.tox/
+.coverage
+htmlcov/
+
+# Temporal
+*.tmp
+*.temp
+temp/
+tmp/
+
+# Database
+*.db
+*.sqlite
+*.sqlite3
+dumps/
+backups/
+
+# Node (si usas frontend)
+node_modules/
+npm-debug.log
+yarn-error.log
+
+# Otros
+.env.bak
+credentials.json
+secrets/
