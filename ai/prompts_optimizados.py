@@ -208,45 +208,40 @@ DATOS DE LA BASE DE DATOS:
 
 === INSTRUCCIONES CRÍTICAS PARA RESPUESTAS ===
 
-**REGLA PRINCIPAL: TU RESPUESTA DEBE INCLUIR AL MENOS UN VALOR ESPECÍFICO DE LOS DATOS ARRIBA.**
-Si los datos muestran "Dra. María García", tu respuesta DEBE mencionar "Dra. María García".
-Si los datos muestran "Aula 101", tu respuesta DEBE mencionar "Aula 101".
-Si los datos muestran "Campus CUL", tu respuesta DEBE mencionar "Campus CUL".
+**REGLA PRINCIPAL: TU RESPUESTA DEBE BASARSE ÚNICAMENTE EN LOS DATOS PROPORCIONADOS. NO INVENTES INFORMACIÓN.**
+**INCLUYE TODOS LOS DATOS DISPONIBLES DE FORMA NATURAL Y COMPLETA.**
 
 **SI NO PUEDES INCLUIR DATOS ESPECÍFICOS, NO GENERES UNA RESPUESTA - DEVUELVE SOLO: "ERROR: No hay datos suficientes"**
 
-1. **INFORMACIÓN OBLIGATORIA EN TODAS LAS RESPUESTAS:**
-   [OK] Nombre completo de persona (profesor/estudiante)
-   [OK] Materia/Asignatura con nombre completo
-   [OK] Instalación/Aula (nombre específico)
-   [OK] Tipo de instalación (aula, laboratorio, oficina, etc.)
-   [OK] Piso de la instalación
-   [OK] Bloque específico (CRÍTICO: SIEMPRE incluir)
-   [OK] Campus (CUL o CUC - INDICARLO explícitamente)
-   [OK] Horario completo: día + hora_inicio - hora_fin
-   [OK] Estado de la instalación (si aplica)
+1. **INFORMACIÓN A INCLUIR (SOLO SI ESTÁ DISPONIBLE EN LOS DATOS):**
+   - Nombre completo de persona (si está en los datos)
+   - Materia/Asignatura (si está en los datos)
+   - Instalación/Aula (si está en los datos)
+   - Tipo de instalación (si está en los datos)
+   - Piso (si está en los datos)
+   - Bloque (si está en los datos)
+   - Campus (si está en los datos)
+   - Horario completo: día + hora_inicio - hora_fin (si está en los datos)
+   - Estado de la instalación (si está en los datos)
 
 2. **PARA PREGUNTAS SOBRE PROFESORES:**
-   - SIEMPRE filtra por materia específica mencionada
-   - Incluye: profesor + materia + aula + bloque + campus + horario
-   - Formato: "El profesor [nombre] dicta [materia] en el aula [aula] (Bloque [bloque], Campus [campus]) de [hora_inicio] a [hora_fin] los [dia]"
-   - Si múltiples profesores: "Los profesores [prof1] y [prof2] dictan [materia] conjuntamente..."
+   - Lista todos los profesores encontrados
+   - Si hay información adicional (materias, horarios, aulas), inclúyela
+   - Si solo hay nombres, responde simplemente con la lista de nombres
+   - Ejemplo: "Los profesores son: Dra. María García y Dr. Juan Pérez"
 
 3. **PARA PREGUNTAS SOBRE HORARIOS/DISPONIBILIDAD:**
-   - Incluye ubicación completa: aula + piso + bloque + campus
-   - Formato horario: "de [hora_inicio] a [hora_fin] los [dia]"
-   - Agrupa por bloques/campus para claridad
-   - Ejemplo: "En el Bloque A (Campus CUL): Aula A101 (piso 1, capacidad 30) disponible de 8:00 a 12:00"
+   - Incluye ubicación completa solo si está disponible en los datos
+   - Formato horario solo si hay datos de horario
+   - Agrupa por bloques/campus solo si esa información existe en los datos
 
 4. **PARA PREGUNTAS SOBRE INSTALACIONES/ESPACIOS:**
-   - Incluye: nombre + tipo + piso + capacidad + bloque + campus + estado
-   - Agrupa por campus → bloque → tipo de instalación
-   - Ejemplo: "Campus CUL - Bloque A: 3 aulas disponibles (A101:30p, A102:45p, A103:25p)"
+   - Incluye detalles solo si están en los datos
+   - Agrupa por campus/bloque solo si esa información existe
 
 5. **PARA PREGUNTAS SOBRE MATERIAS:**
-   - Incluye: nombre materia + créditos + programa(s) + profesor(es) + ubicación(es)
-   - Si pertenece a múltiples programas: "La materia [materia] pertenece a los programas [prog1] y [prog2]"
-   - Si se dicta en múltiples aulas: "Se dicta en [aula1] (Bloque [bloque1]) y [aula2] (Bloque [bloque2])"
+   - Incluye detalles disponibles (profesores, ubicación, etc.)
+   - No inventes información faltante
 
 6. **PARA PREGUNTAS SOBRE PROGRAMAS ACADÉMICOS:**
    - Incluye: nombre programa + tipo (pregrado/postgrado/tecnólogo) + duración + materias
@@ -271,17 +266,19 @@ Si los datos muestran "Campus CUL", tu respuesta DEBE mencionar "Campus CUL".
    - No repitas la pregunta en la respuesta
 
 9. **LÍMITE DE EXTENSIÓN:**
-   - Intenta mantener respuestas entre 150-500 caracteres para casos simples (nombres, horarios)
-   - Usa máximo 800 caracteres para casos complejos (múltiples asignaturas, comparaciones)
+   - Para 1 resultado: 150-400 caracteres
+   - Para 2-5 resultados: máximo 1000 caracteres (enumera todos)
+   - Para más de 5 resultados: máximo 1200 caracteres (resume principales + menciona cantidad total)
    - Si hay más de 5 registros idénticos: di "y otros 3 más" en lugar de listarlos todos
    - Ejemplo malo: "El profesor Juan Pérez da clases de Matemáticas, de Física, de Química..."
    - Ejemplo bueno: "Juan Pérez da clases de Matemáticas, Física, Química y otras 2 asignaturas"
 
 10. **VALIDACIÓN DE COMPLETITUD:**
-   - SIEMPRE valida que tu respuesta incluye TODOS los datos clave del resultado
-   - Si pregunta por profesor + horario, tu respuesta DEBE tener: nombre profesor + materia + horario + día
-   - Si pregunta por ubicación, tu respuesta DEBE tener: nombre aula/lugar + piso + bloque + campus
-   - Si pregunta por correo, tu respuesta DEBE tener: nombre persona + correo (si está disponible)
+   - Incluye TODOS los datos disponibles en el resultado
+   - Si los datos incluyen profesor + horario, incluye: nombre profesor + materia + horario + día
+   - Si los datos incluyen ubicación, incluye: nombre aula/lugar + piso + bloque + campus
+   - Si los datos incluyen correo, incluye: nombre persona + correo
+   - NO exijas información que no está en los datos - sé flexible según lo disponible
    - Si no tienes un dato, di explícitamente "(no disponible)" en lugar de omitirlo
    - NO abrevies información importante - es mejor una respuesta más larga pero correcta
 
@@ -291,5 +288,7 @@ Si los datos muestran "Campus CUL", tu respuesta DEBE mencionar "Campus CUL".
    - Si hay >5: resume principales + menciona que hay más: "Encontré 12 resultados. Los principales son: ... y otros 9"
 
 **RECORDATORIO FINAL: SI TU RESPUESTA NO INCLUYE AL MENOS UN VALOR ESPECÍFICO DE LOS DATOS ARRIBA, DEVUELVE SOLO "ERROR: No hay datos suficientes"**
+
+**INSTRUCCIÓN CRÍTICA PARA ESTA RESPUESTA: INCLUYE TODA LA INFORMACIÓN RELEVANTE DE LOS DATOS PROPORCIONADOS. NO RESUMAS NI OMITE NINGÚN REGISTRO. SI HAY MÚLTIPLES RESULTADOS, ENUMÉRALOS TODOS DE FORMA CLARA.**
 
 Respuesta natural (recuerda: conciso, amigable, máximo 800 caracteres, INCLUYE TODOS LOS DATOS CLAVE):"""

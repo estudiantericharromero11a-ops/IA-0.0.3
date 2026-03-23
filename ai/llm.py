@@ -5,17 +5,17 @@ from config import OLLAMA_HOST, OLLAMA_MODEL, OLLAMA_TIMEOUT
 
 logger = logging.getLogger(__name__)
 
-def llamar_llm(prompt, temperature=0.1, max_tokens=500, intentos=3, timeout=None):
+def llamar_llm(prompt, temperature=0.1, max_tokens=300, intentos=3, timeout=None):
     """
-    Llama a Ollama con el modelo llama3 y parámetros configurados.
+    Llama a Ollama con el modelo llama3 y parámetros optimizados para velocidad.
     Incluye retry logic con exponential backoff.
     
     Args:
         prompt (str): Prompt para el modelo
         temperature (float): Temperatura (0 = determinístico, 1 = creativo)
-        max_tokens (int): Máximo número de tokens a generar
+        max_tokens (int): Máximo número de tokens a generar (reducido para velocidad)
         intentos (int): Número de reintentos en caso de error
-        timeout (int): Timeout en segundos para la llamada (por defecto configurado en OLLAMA_TIMEOUT)
+        timeout (int): Timeout en segundos para la llamada
     
     Returns:
         str: Respuesta del modelo o mensaje de error

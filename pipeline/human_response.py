@@ -103,13 +103,13 @@ def _generar_respuesta_datos(columnas, filas):
         return "\n".join(lineas)
 
 
-def _truncar_respuesta_si_es_necesario(respuesta, max_caracteres=900):
+def _truncar_respuesta_si_es_necesario(respuesta, max_caracteres=1200):
     """
     Valida y trunca respuestas muy largas para mantener concisión.
     
     Args:
         respuesta: Texto de la respuesta
-        max_caracteres: Máximo de caracteres permitidos (default: 900)
+        max_caracteres: Máximo de caracteres permitidos (default: 1200 para múltiples resultados)
     
     Returns:
         Respuesta truncada si supera el límite, de lo contrario original
