@@ -41,6 +41,10 @@ Antes de empezar, asegúrate de tener instalado:
 
 - **Ollama** (descarga desde https://ollama.ai/)
   - Necesario para el modelo de IA llama3
+  - Ejecuta en una terminal: `ollama serve`
+  - Si no está el modelo: `ollama pull llama3`
+
+- **pgvector** (operaciones de vectores en PostgreSQL)
 
 ### 2. Verifica que todo está instalado
 
