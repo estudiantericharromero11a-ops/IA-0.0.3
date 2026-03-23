@@ -120,6 +120,31 @@ def poblar_conocimiento_completo():
                 # 3. Ejemplos específicos
                 contexto_textos.extend(ejemplos_fk)
 
+                # 4. Descripciones extendidas basadas en información del usuario
+                contexto_detallado = [
+                    "MÓDULO: ESTRUCTURA FÍSICA -> Tablas: campus, bloques, instalaciones, areas_funcionales, estado_instalacion.",
+                    "campus: id_campus (PK), nombre (CUL/CUC), direccion, descripcion; distingue universidades en una estructura común.",
+                    "bloques: id_bloque (PK), nombre, descripcion, id_campus (FK). Asocia bloques físicos a un campus.",
+                    "instalaciones: id_instalacion (PK), nombre, tipo_instalacion (aula, laboratorio, oficina, biblioteca), piso, capacidad, id_bloque (FK), id_area (FK), id_estado (FK).",
+                    "areas_funcionales: id_area (PK), nombre_area, descripcion; define el propósito funcional de instalaciones.",
+                    "estado_instalacion: id_estado (PK), nombre_estado (Disponible, Ocupado, Mantenimiento), descripcion; indica disponibilidad de instalaciones.",
+                    "horario_instalacion: id_horario (PK), id_instalacion (FK), dia_semana, hora_apertura, hora_cierre; define ventanas de uso físico.",
+                    "MÓDULO: GESTIÓN ACADÉMICA -> Tablas: personas, roles, persona_rol, materias, programas, programa_materia, horario_instalacion.",
+                    "personas: id_persona (PK), nombre, documento (sensible), correo, telefono; usuarios del sistema (profesores, estudiantes, administrativos).",
+                    "roles: id_rol (PK), nombre_rol (Estudiante, Profesor, Administrativo), descripcion; define categoria de rol por persona.",
+                    "persona_rol: tabla puente entre personas y roles; permite múltiples roles por persona.",
+                    "materias: id_materia (PK), nombre, creditos, descripcion; asignaturas del catálogo.",
+                    "programas: id_programa (PK), nombre, tipo_programa (pregrado, postgrado, tecnologo, tecnico), duracion_semestres.",
+                    "programa_materia: tabla puente entre programas y materias; organiza planes de estudio.",
+                    "MÓDULO: OPERACIÓN (NÚCLEO DEL SISTEMA) -> tabla asignacion_instalaciones.",
+                    "asignacion_instalaciones: id_asignacion (PK), id_instalacion (FK), id_materia (FK), dia_semana, hora_inicio, hora_fin, id_persona (FK); conecta profesor, materia, instalación y horario.",
+                    "Responde preguntas clave: ¿qué profesor da clase?, ¿dónde?, ¿cuándo?, ¿qué materia? con datos reales.",
+                    "MÓDULO: INTELIGENCIA ARTIFICIAL -> tabla conocimiento (id PK, contenido texto, embedding vector).",
+                    "conocimiento: vía RAG para entender lenguaje natural, búsquedas semánticas y contexto adicional de este dominio universitario.",
+                    "Recomendación: si la base de conocimiento es insuficiente, esta tabla debe reforzarse con descripciones de tabla, relación y casos con ejemplos.",
+                ]
+                contexto_textos.extend(contexto_detallado)
+
                 # Insertar todos los contextos
                 for i, texto in enumerate(contexto_textos, 1):
                     try:

@@ -251,10 +251,10 @@ DATOS DE LA BASE DE DATOS:
    - Ejemplo: "El programa [nombre] (tipo: pregrado, duracion: 10 semestres) incluye materias como [materia1], [materia2]..."
 
 7. **MANEJO DE INFORMACIÓN SENSIBLE:**
-   - ❌ NUNCA incluyas documento/cedula de identidad
-   - ⚠️ Correo institucional: incluir solo si es necesario para identificacion
-   - ⚠️ Telefono: incluir solo si es especificamente solicitado
-   - ✅ Nombre completo: siempre incluir
+   - NUNCA incluyas documento/cedula de identidad
+   - Correo institucional: incluir solo si es necesario para identificacion
+   - Telefono: incluir solo si es especificamente solicitado
+   - Nombre completo: siempre incluir
 
 8. **ESTRUCTURA DE RESPUESTA:**
    - **Linea inicial**: Resumen directo de la respuesta

@@ -4,6 +4,69 @@ from ai.retrieval import obtener_contexto
 from ai.llm import llamar_llm
 from ai.prompts_optimizados import prompt_sql
 from ai.config_ia import PALABRAS_CLAVE_IA, PALABRAS_EXACTAS_IA
+from database.queries import get_connection, ejecutar_query
+
+
+def _obtener_contexto_exacto(pregunta):
+    """Chequeo de coincidencia directa en tablas (campus/personas/materias)."""
+    if not pregunta:
+        return ""
+
+    tokens = [t for t in re.findall(r"\b\w{3,}\b", pregunta.lower())]
+    if not tokens:
+        return ""
+
+    contexto_list = []
+
+    try:
+        conn = get_connection()
+        cursor = conn.cursor()
+
+        for token in tokens[:6]:
+            # Campus
+            like_token = f"%{token}%"
+            cursor.execute(
+                "SELECT nombre, direccion, descripcion FROM campus WHERE nombre ILIKE %s OR descripcion ILIKE %s LIMIT 1",
+                (like_token, like_token)
+            )
+            campus_row = cursor.fetchone()
+            if campus_row:
+                contexto_list.append(f"Campus encontrado: {campus_row['nombre']} - {campus_row.get('direccion')} - {campus_row.get('descripcion')}")
+
+            # Materia
+            cursor.execute(
+                "SELECT nombre, descripcion FROM materias WHERE nombre ILIKE %s OR descripcion ILIKE %s LIMIT 1",
+                (like_token, like_token)
+            )
+            materia_row = cursor.fetchone()
+            if materia_row:
+                contexto_list.append(f"Materia encontrada: {materia_row['nombre']} - {materia_row.get('descripcion')}")
+
+            # Profesor
+            cursor.execute(
+                "SELECT p.nombre, r.nombre_rol FROM personas p "
+                "JOIN persona_rol pr ON p.id_persona = pr.id_persona "
+                "JOIN roles r ON pr.id_rol = r.id_rol "
+                "WHERE p.nombre ILIKE %s AND LOWER(r.nombre_rol) IN ('profesor','docente','instructor','catedratico','catedrático') LIMIT 1",
+                (like_token,)
+            )
+            profesor_row = cursor.fetchone()
+            if profesor_row:
+                contexto_list.append(f"Profesor encontrado: {profesor_row['nombre']} (rol: {profesor_row['nombre_rol']})")
+
+            if len(contexto_list) >= 3:
+                break
+
+    except Exception as e:
+        logger.warning(f"Error en _obtener_contexto_exacto: {e}")
+    finally:
+        try:
+            cursor.close()
+            conn.close()
+        except:
+            pass
+
+    return "\n".join(contexto_list)
 
 
 def _extraer_sql_posible(text):
@@ -80,9 +143,67 @@ def _heuristica_sql_simple(pregunta):
         'lunes', 'martes', 'miércoles', 'miercoles', 'jueves', 'viernes', 'sabado', 'sábado', 'domingo',
         'horario', 'dia', 'día', 'clases'
     ])
+    tiene_correo = any(k in pregunta_lower for k in [
+        'correo', 'email', 'contacto', 'telefono', 'teléfono', 'dato de contacto', 'datos de contacto'
+    ])
+    tiene_aula = any(k in pregunta_lower for k in ['aula', 'laboratorio', 'oficina'])
+    tiene_ubicacion = any(k in pregunta_lower for k in ['dónde', 'donde', 'Ubicación'.lower(), 'ubicación', 'ubicacion', 'piso', 'campus'])
+
+    if tiene_aula and (tiene_ubicacion or tiene_capacidad_total or 'capacidad' in pregunta_lower):
+        # Extraer número o identificador de aula/laboratorio/oficina si existe
+        match = re.search(r"(aula|laboratorio|oficina)\s*([0-9]+)", pregunta_lower)
+        filtro_instalacion = ""
+        if match:
+            tipo = match.group(1)
+            numero = match.group(2)
+            filtro_instalacion = f"i.nombre ILIKE '%{tipo.capitalize()} {numero}%'"
+        elif 'aula' in pregunta_lower:
+            filtro_instalacion = "i.nombre ILIKE '%aula%'"
+        elif 'laboratorio' in pregunta_lower:
+            filtro_instalacion = "i.nombre ILIKE '%laboratorio%'"
+        elif 'oficina' in pregunta_lower:
+            filtro_instalacion = "i.nombre ILIKE '%oficina%'"
+
+        if filtro_instalacion:
+            return (
+                "SELECT i.nombre, i.piso, i.capacidad, i.tipo_instalacion, b.nombre AS bloque, c.nombre AS campus, "
+                "af.nombre_area, ei.nombre_estado "
+                "FROM instalaciones i "
+                "LEFT JOIN bloques b ON i.id_bloque = b.id_bloque "
+                "LEFT JOIN campus c ON b.id_campus = c.id_campus "
+                "LEFT JOIN areas_funcionales af ON i.id_area = af.id_area "
+                "LEFT JOIN estado_instalacion ei ON i.id_estado = ei.id_estado "
+                f"WHERE {filtro_instalacion} LIMIT 100"
+            )
 
     # Consulta detallada multi-tabla para respuestas ricas de módulos
     if tiene_profesor and tiene_materia:
+        # Extraer nombres específicos de profesor y materia si están mencionados
+        nombre_profesor = None
+        nombre_materia = None
+        
+        # Buscar patrón "profesor [Nombre]" o "[Nombre] profesor"
+        match_prof = re.search(r'profesor\s+([A-Z][a-z]+(?:\s+[A-Z][a-z]+)*)', pregunta, re.IGNORECASE)
+        if match_prof:
+            nombre_profesor = match_prof.group(1).strip()
+        
+        # Buscar materia específica mencionada
+        for materia_comun in ['matemáticas', 'matematicas', 'física', 'fisica', 'química', 'quimica', 'biología', 'biologia', 'historia', 'literatura', 'programación', 'programacion']:
+            if materia_comun in pregunta_lower:
+                nombre_materia = materia_comun
+                break
+        
+        # Construir filtros
+        filtros = []
+        if nombre_profesor:
+            filtros.append(f"p.nombre ILIKE '%{nombre_profesor}%'")
+        if nombre_materia:
+            filtros.append(f"m.nombre ILIKE '%{nombre_materia}%'")
+        
+        filtro_where = " AND ".join(filtros) if filtros else ""
+        if filtro_where:
+            filtro_where = f"WHERE {filtro_where}"
+        
         return (
             "SELECT "
             "p.nombre AS profesor, m.nombre AS materia, i.nombre AS instalacion, i.tipo_instalacion, i.capacidad, "
@@ -96,7 +217,7 @@ def _heuristica_sql_simple(pregunta):
             "LEFT JOIN campus c ON b.id_campus = c.id_campus "
             "LEFT JOIN areas_funcionales af ON i.id_area = af.id_area "
             "LEFT JOIN estado_instalacion ei ON i.id_estado = ei.id_estado "
-            "LIMIT 100"
+            f"{filtro_where} LIMIT 100"
         )
 
     if 'asignacion_instalaciones' in pregunta_lower or tiene_horario:
@@ -135,10 +256,9 @@ def _heuristica_sql_simple(pregunta):
             "SELECT "
             "(SELECT STRING_AGG(DISTINCT p.nombre, ', ') "
             "FROM personas p "
-            "LEFT JOIN persona_rol pr ON p.id_persona = pr.id_persona "
-            "LEFT JOIN roles r ON pr.id_rol = r.id_rol "
-            "WHERE LOWER(r.nombre_rol) IN ('profesor', 'docente', 'instructor', 'catedratico', 'catedrático') "
-            "   OR p.id_persona IN (SELECT id_persona FROM asignacion_instalaciones)) AS profesores, "
+            "INNER JOIN persona_rol pr ON p.id_persona = pr.id_persona "
+            "INNER JOIN roles r ON pr.id_rol = r.id_rol "
+            "WHERE LOWER(r.nombre_rol) IN ('profesor', 'docente', 'instructor', 'catedratico', 'catedrático')) AS profesores, "
             "(SELECT SUM(capacidad) FROM instalaciones) AS capacidad_total"
         )
 
@@ -150,13 +270,22 @@ def _heuristica_sql_simple(pregunta):
                 dia_clave = dia
                 break
 
-        filtro_dia = f"AND Sistema.dia_semana ILIKE '{dia_clave}'" if dia_clave else ""
+        filtro_dia = f"AND LOWER(a.dia_semana) ILIKE LOWER('{dia_clave}')" if dia_clave else ""
+        
+        # Si pregunta por correo, incluirlo
+        campo_contacto = ", p.correo, p.telefono" if tiene_correo else ""
+        
         return (
-            "SELECT DISTINCT p.nombre, Sistema.dia_semana, Sistema.hora_inicio, Sistema.hora_fin "
+            f"SELECT DISTINCT p.nombre{campo_contacto}, m.nombre AS materia, i.nombre AS instalacion, "
+            "a.dia_semana, a.hora_inicio, a.hora_fin, b.nombre AS bloque, c.nombre AS campus "
             "FROM personas p "
-            "INNER JOIN asignacion_instalaciones Sistema ON p.id_persona = Sistema.id_persona "
+            "INNER JOIN asignacion_instalaciones a ON p.id_persona = a.id_persona "
             "INNER JOIN persona_rol pr ON p.id_persona = pr.id_persona "
             "INNER JOIN roles r ON pr.id_rol = r.id_rol "
+            "LEFT JOIN materias m ON a.id_materia = m.id_materia "
+            "LEFT JOIN instalaciones i ON a.id_instalacion = i.id_instalacion "
+            "LEFT JOIN bloques b ON i.id_bloque = b.id_bloque "
+            "LEFT JOIN campus c ON b.id_campus = c.id_campus "
             "WHERE LOWER(r.nombre_rol) IN ('profesor', 'docente', 'instructor', 'catedratico', 'catedrático') "
             f"{filtro_dia} LIMIT 100"
         )
@@ -165,14 +294,25 @@ def _heuristica_sql_simple(pregunta):
         return "SELECT SUM(capacidad) AS capacidad_total FROM instalaciones"
 
     if tiene_profesor:
-        return (
-            "SELECT DISTINCT p.nombre "
-            "FROM personas p "
-            "LEFT JOIN persona_rol pr ON p.id_persona = pr.id_persona "
-            "LEFT JOIN roles r ON pr.id_rol = r.id_rol "
-            "WHERE LOWER(r.nombre_rol) IN ('profesor', 'docente', 'instructor', 'catedratico', 'catedrático') "
-            "   OR p.id_persona IN (SELECT id_persona FROM asignacion_instalaciones)"
-        )
+        # Si pregunta por correo/email, incluir esos campos
+        if tiene_correo:
+            return (
+                "SELECT DISTINCT p.nombre, p.correo, p.telefono "
+                "FROM personas p "
+                "INNER JOIN persona_rol pr ON p.id_persona = pr.id_persona "
+                "INNER JOIN roles r ON pr.id_rol = r.id_rol "
+                "WHERE LOWER(r.nombre_rol) IN ('profesor', 'docente', 'instructor', 'catedratico', 'catedrático') "
+                "LIMIT 100"
+            )
+        else:
+            return (
+                "SELECT DISTINCT p.nombre "
+                "FROM personas p "
+                "INNER JOIN persona_rol pr ON p.id_persona = pr.id_persona "
+                "INNER JOIN roles r ON pr.id_rol = r.id_rol "
+                "WHERE LOWER(r.nombre_rol) IN ('profesor', 'docente', 'instructor', 'catedratico', 'catedrático') "
+                "LIMIT 100"
+            )
 
     return None
 
@@ -207,9 +347,14 @@ def generar_sql(pregunta):
         logger.info(f"SQL heurística aplicado: {sql_heuristica}")
         sql = sql_heuristica
     else:
-        # Obtener contexto de embeddings
+        # Capa de "exact-match context" antes de generar SQL
+        contexto_exacto = _obtener_contexto_exacto(pregunta)
+
+        # Obtener contexto de embeddings y tablas (RAG)
         contexto = obtener_contexto(pregunta)
-        
+        if contexto_exacto:
+            contexto = f"{contexto_exacto}\n\n{contexto}" if contexto else contexto_exacto
+
         # Crear prompt para Ollama
         prompt = prompt_sql(contexto, pregunta)
 
