@@ -103,22 +103,22 @@ def _generar_respuesta_datos(columnas, filas):
         return "\n".join(lineas)
 
 
-def _truncar_respuesta_si_es_necesario(respuesta, max_caracteres=1200):
+def _truncar_respuesta_si_es_necesario(respuesta, max_caracteres=5000):
     """
-    Valida y trunca respuestas muy largas para mantener concisión.
+    Valida respuestas con límite flexible para permitir respuestas naturales.
     
     Args:
         respuesta: Texto de la respuesta
-        max_caracteres: Máximo de caracteres permitidos (default: 1200 para múltiples resultados)
+        max_caracteres: Máximo de caracteres permitidos (default: 5000 para respuestas completas)
     
     Returns:
-        Respuesta truncada si supera el límite, de lo contrario original
+        Respuesta original (sin truncar) a menos que sea excesivamente larga
     """
     if not respuesta or len(respuesta) <= max_caracteres:
         return respuesta
     
-    # Si la respuesta es demasiado larga, truncarla
-    logger.info(f"Respuesta muy larga ({len(respuesta)} caracteres). Truncando a {max_caracteres}...")
+    # Solo truncar si es EXTREMADAMENTE larga (ej: errores de iteración infinita)
+    logger.warning(f"Respuesta extremadamente larga ({len(respuesta)} caracteres). Truncando a {max_caracteres}...")
     
     # Truncar sin cortar en medio de una palabra
     truncado = respuesta[:max_caracteres]
