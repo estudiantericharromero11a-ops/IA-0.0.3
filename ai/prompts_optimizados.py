@@ -173,8 +173,11 @@ WHERE LOWER(pr.tipo_programa) = 'pregrado'
 5. **UBICACIONES:** SIEMPRE incluye bloque y campus cuando sea relevante
 6. **PERSONAS:** Nunca reveles informacion sensible (documento)
 7. **JOINS:** El orden importa para la cascada correcta
-8. **TABLA CENTRAL:** asignacion_instalaciones conecta profesor+materia+aula+horario
-
+8. **TABLA CENTRAL:** asignacion_instalaciones conecta profesor+materia+aula+horario10. **FORZAR UBICACIÓN CAMPUS+BLOQUE:**
+    - Si la pregunta menciona campus / bloque / aula / edificio / sede, el SQL debe usar la ruta:
+      `asignacion_instalaciones -> instalaciones -> bloques -> campus`
+      o bien directamente `instalaciones -> bloques -> campus`.
+    - No uses `id_campus` en asignacion_instalaciones (no existe), siempre usa JOINs desde instalaciones.
 CONTEXTO: {contexto}
 PREGUNTA: {pregunta}
 
@@ -291,4 +294,4 @@ DATOS DE LA BASE DE DATOS:
 
 **INSTRUCCIÓN CRÍTICA PARA ESTA RESPUESTA: INCLUYE TODA LA INFORMACIÓN RELEVANTE DE LOS DATOS PROPORCIONADOS. NO RESUMAS NI OMITE NINGÚN REGISTRO. SI HAY MÚLTIPLES RESULTADOS, ENUMÉRALOS TODOS DE FORMA CLARA.**
 
-Respuesta natural (recuerda: conciso, amigable, máximo 800 caracteres, INCLUYE TODOS LOS DATOS CLAVE):"""
+Respuesta natural (recuerda: conciso, amigable, INCLUYE TODOS LOS DATOS CLAVE):"""

@@ -314,6 +314,14 @@ def _heuristica_sql_simple(pregunta):
                 "LIMIT 100"
             )
 
+    # Preguntas genéricas sobre correo/contacto sin rol específico
+    if tiene_correo:
+        return (
+            "SELECT DISTINCT p.nombre, p.correo, p.telefono "
+            "FROM personas p "
+            "LIMIT 100"
+        )
+
     return None
 
 
@@ -406,13 +414,33 @@ def generar_sql(pregunta):
 
     # FIX Q10 y Q14: corregir comparaciones TIME y validar parámetros
     sql = _corregir_comparaciones_time(sql)
-    _validar_no_parametros(sql)
+    try:
+        _validar_no_parametros(sql)
+    except Exception as e:
+        logger.warning(f"[WARNING] Validación de parámetros falló: {e}. Intentando fallback heurístico.")
+        # Si la heurística ya existe y es distinta, usarla; sino usar fallback seguro
+        heuristica = _heuristica_sql_simple(pregunta)
+        if heuristica and heuristica != sql:
+            logger.info(f"Aplicando fallback heurístico SQL: {heuristica}")
+            sql = heuristica
+        else:
+            sql = "SELECT DISTINCT p.nombre, p.correo, p.telefono FROM personas p LIMIT 100"
+            logger.info("Aplicando fallback genérico SQL de contacto")
+        _validar_no_parametros(sql)
 
     # Forzar comparación de roles case-insensitive
     # Convertir r.nombre_rol a LOWER(r.nombre_rol) para evitar problemas mayúsculas/minúsculas
     sql = re.sub(r"(?<!LOWER\()\br\.nombre_rol\b(?!\))", "LOWER(r.nombre_rol)", sql, flags=re.IGNORECASE)
     sql = re.sub(r"(?<!LOWER\()\broles\.nombre_rol\b(?!\))", "LOWER(roles.nombre_rol)", sql, flags=re.IGNORECASE)
-    
+
+    # Si se compara con literal, normalizar el literal a minusculas tambien
+    sql = re.sub(
+        r"LOWER\((?P<alias>r|roles)\.nombre_rol\)\s*=\s*'([^']*)'",
+        lambda m: f"LOWER({m.group('alias')}.nombre_rol) = '{m.group(2).lower()}'",
+        sql,
+        flags=re.IGNORECASE,
+    )
+
     # Validación básica: solo SELECT, no operaciones peligrosas
     if not re.match(r"^\s*SELECT\s+", sql, re.IGNORECASE):
         logger.error(f"SQL no válido (no es SELECT): {sql}")
