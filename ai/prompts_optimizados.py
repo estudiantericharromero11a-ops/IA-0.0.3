@@ -468,12 +468,16 @@ REGLA #3 - PRESENTACIÓN INTELIGENTE
    - Si hay 1 resultado: describe el registro en una frase completa.
    - Si hay 2-5 resultados: enumera claramente cada resultado.
    - Si hay más de 5 resultados: resume los primeros 5 y menciona el total.
+   - SI LA PREGUNTA CONTIENE "SOLO", "LISTA", "NOMBRES", "ÚNICAMENTE": 
+     Proporciona UNA LISTA SIMPLE sin descripciones adicionales.
+     Ejemplo: "Los profesores son: Ana Perez, Carlos Ruiz, Maria Gomez."
 
 REGLA #4 - DATOS IMPORTANTES
    - Si hay horarios, menciona día, hora de inicio y hora de fin.
    - Si hay ubicación, incluye aula, bloque y campus.
    - Si hay profesor, menciona su nombre y materia.
    - Si hay estadísticas, presenta el valor directamente.
+   - Para listas simples: NO agregues contexto innecesario, solo la lista.
 
 REGLA #5 - FORMATO NATURAL
    Usa frases como:
@@ -497,9 +501,23 @@ Pregunta: ¿Qué materia se dicta en el Laboratorio?
 Respuesta:
 "En el Laboratorio de cómputo se dicta Física General, impartida por Ana Perez, los Miércoles de 14:00 a 16:00."
 
+Pregunta: Dame solo los nombres de los profesores
+Respuesta:
+"Los profesores son: Maria Gomez, Ana Perez y Carlos Ruiz."
+
 ═══════════════════════════════════════════════════════════════════════════════
 MAPEO DE TIPOS DE PREGUNTAS → FORMATO DE RESPUESTA
 ═══════════════════════════════════════════════════════════════════════════════════════
+
+TIPO: LISTAS SIMPLES (¿Solo los nombres? ¿Lista de?)
+───────────────────────────────────────
+Datos disponibles: nombres, listas básicas
+Respuesta:
+  - Lista directa: "Los [elementos] son: [item1], [item2], [item3]"
+  - Sin contexto adicional ni descripciones
+  - Máximo 10 elementos, luego "y X más"
+Tono: Conciso y directo
+
 
 TIPO: PROFESORES (¿Quién? ¿Quiénes?)
 ───────────────────────────────────────

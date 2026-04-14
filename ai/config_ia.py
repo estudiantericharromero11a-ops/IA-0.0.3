@@ -10,11 +10,13 @@ Evita duplicación de palabras clave y constantes.
 # Frases completas que definitivamente son sobre la THANIA
 PALABRAS_CLAVE_IA = [
     'como te llamas', 'tu nombre', 'eres', 'quien eres', 'que eres',
-    'para que sirves', 'para qué sirves', 'sirves', 'funcion', 'función',
+    'para que sirves', 'para qué sirves', 'sirves', 'sirve', 'para que sirve', 'para qué sirve',
+    'funcion', 'función', 'cual es tu funcion', 'cuál es tu función',
     'proposito', 'propósito', 'que haces', 'presenta', 'presentate',
     'quien soy', 'hola', 'saludos', 'cual es tu nombre', 'cuál es tu nombre',
     'cual es tu proposito', 'cuál es tu propósito', 'bienvenida', 'hola thania',
-    'greetings', 'introducete', 'introducción'
+    'greetings', 'introducete', 'introducción', 'que significa', 'significa',
+    'que eres tu', 'quien te creo', 'quién te creó', 'creador', 'autor'
 ]
 
 # Palabras exactas (word boundaries) que indican preguntas sobre THANIA
@@ -80,8 +82,8 @@ TEMPERATURA_SQL = 0.1  # Muy bajo = determinístico, menos creativo
 MAX_TOKENS_SQL = 500  # Máximo tokens para generar SQL
 
 # Parámetros para generación de respuestas (más conversacional)
-TEMPERATURA_RESPUESTA = 0.5  # Medio = balance entre determinístico y creativo
-MAX_TOKENS_RESPUESTA = 1800  # Límite para respuestas, ajustable según la cantidad de información
+TEMPERATURA_RESPUESTA = 0.3  # Bajo = más preciso y determinístico, menos creativo
+MAX_TOKENS_RESPUESTA = 1200  # Reducido para respuestas más concisas
 
 # Modelo de embeddings para RAG
 MODELO_EMBEDDINGS = 'all-MiniLM-L6-v2'  # 384 dimensiones, ligero pero efectivo

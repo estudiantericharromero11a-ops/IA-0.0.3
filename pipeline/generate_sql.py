@@ -167,6 +167,17 @@ def _heuristica_sql_simple(pregunta):
             "LIMIT 1"
         )
 
+    # NUEVA HEURÍSTICA: Listar solo nombres de profesores
+    if ('nombres' in pregunta_lower and 'solo' in pregunta_lower) or (tiene_profesor and ('nombres' in pregunta_lower or 'lista' in pregunta_lower or 'quienes' in pregunta_lower)):
+        return (
+            "SELECT DISTINCT p.nombre "
+            "FROM personas p "
+            "INNER JOIN persona_rol pr ON p.id_persona = pr.id_persona "
+            "INNER JOIN roles r ON pr.id_rol = r.id_rol "
+            "WHERE LOWER(r.nombre_rol) IN ('profesor', 'docente', 'instructor', 'catedratico', 'catedrático') "
+            "LIMIT 100"
+        )
+
     if tiene_aula and (tiene_ubicacion or tiene_capacidad_total or 'capacidad' in pregunta_lower):
         # Extraer número o identificador de aula/laboratorio/oficina si existe
         match = re.search(r"(aula|laboratorio|oficina)\s*([0-9]+)", pregunta_lower)

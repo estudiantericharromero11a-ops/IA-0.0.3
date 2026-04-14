@@ -46,8 +46,8 @@ def seed_data():
         """)
         cur.execute("""
             INSERT INTO personas (nombre, documento, correo, telefono) VALUES
-            ('Juan Pérez', '12345678', 'juan@univ.edu', '555-1234'),
-            ('María García', '87654321', 'maria@univ.edu', '555-5678')
+            ('Juan Pérez', '11111111', 'usuario1@univ.edu', '555-0001'),
+            ('María García', '22222222', 'usuario2@univ.edu', '555-0002')
             ON CONFLICT DO NOTHING;
         """)
         cur.execute("""
