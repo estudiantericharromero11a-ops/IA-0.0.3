@@ -68,7 +68,8 @@ def _validar_parametros_sql(sql):
         errores.append(f"Contiene variables SQL sin asignar: {', '.join(dollar_vars)}")
 
     # 5. Detectar placeholders nombrados (ej: :nombre, @variable)
-    named_placeholders = re.findall(r'[@:]\w+', sql)
+    # PERO: excluir PostgreSQL casts (::tipo) - no es un parámetro con negative lookbehind
+    named_placeholders = re.findall(r'(?<!:)[:@]\w+', sql)
     if named_placeholders:
         errores.append(f"Contiene placeholders nombrados: {', '.join(named_placeholders)}")
 

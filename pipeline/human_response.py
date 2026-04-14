@@ -4,7 +4,7 @@ from datetime import datetime, time, date
 from decimal import Decimal
 from ai.llm import llamar_llm
 from ai.prompts_optimizados import prompt_respuesta
-from ai.config_ia import PALABRAS_CLAVE_IA, PALABRAS_EXACTAS_IA, RESPUESTA_PREGUNTAS_IA
+from ai.config_ia import PALABRAS_CLAVE_IA, PALABRAS_EXACTAS_IA, RESPUESTA_PREGUNTAS_IA, MAX_TOKENS_RESPUESTA
 
 logger = logging.getLogger(__name__)
 
@@ -58,49 +58,149 @@ def _serializar_filas(filas, columnas):
     return filas_serializadas
 
 
+def _formatear_fila_natural(fila, columnas):
+    """Construye una frase natural a partir de una fila de datos."""
+    datos = {col.lower(): fila.get(col) for col in columnas}
+
+    profesor = datos.get('profesor') or datos.get('nombre')
+    materia = datos.get('materia') or datos.get('nombre_materia')
+    instalacion = datos.get('instalacion') or datos.get('aula') or datos.get('nombre_aula')
+    tipo_instalacion = datos.get('tipo_instalacion') or datos.get('tipo')
+    bloque = datos.get('bloque')
+    campus = datos.get('campus')
+    area = datos.get('nombre_area')
+    estado = datos.get('nombre_estado') or datos.get('estado')
+    dia = datos.get('dia_semana') or datos.get('dia')
+    hora_inicio = datos.get('hora_inicio')
+    hora_fin = datos.get('hora_fin')
+
+    def fmt(valor):
+        return str(valor) if valor is not None else None
+
+    profesor = fmt(profesor)
+    materia = fmt(materia)
+    instalacion = fmt(instalacion)
+    tipo_instalacion = fmt(tipo_instalacion)
+    bloque = fmt(bloque)
+    campus = fmt(campus)
+    area = fmt(area)
+    estado = fmt(estado)
+    dia = fmt(dia)
+    hora_inicio = fmt(hora_inicio)
+    hora_fin = fmt(hora_fin)
+
+    partes = []
+
+    if profesor and materia:
+        frase = f"{profesor} dicta {materia}"
+        if instalacion:
+            frase += f" en {instalacion}"
+        if tipo_instalacion:
+            frase += f" ({tipo_instalacion})"
+        ubicacion = []
+        if bloque:
+            ubicacion.append(f"bloque {bloque}")
+        if campus:
+            ubicacion.append(f"campus {campus}")
+        if ubicacion:
+            frase += f", {' - '.join(ubicacion)}"
+        if dia or hora_inicio or hora_fin:
+            horario = []
+            if dia:
+                horario.append(f"los {dia}")
+            if hora_inicio and hora_fin:
+                horario.append(f"de {hora_inicio} a {hora_fin}")
+            elif hora_inicio:
+                horario.append(f"a partir de {hora_inicio}")
+            elif hora_fin:
+                horario.append(f"hasta {hora_fin}")
+            frase += f", {' '.join(horario)}"
+        if area:
+            frase += f", área {area}"
+        if estado:
+            frase += f", estado {estado}"
+        return frase
+
+    if instalacion:
+        frase = f"Instalación: {instalacion}"
+        detalles = []
+        if tipo_instalacion:
+            detalles.append(tipo_instalacion)
+        if bloque:
+            detalles.append(f"bloque {bloque}")
+        if campus:
+            detalles.append(f"campus {campus}")
+        if estado:
+            detalles.append(f"estado {estado}")
+        if detalles:
+            frase += f" ({', '.join(detalles)})"
+        return frase
+
+    if materia:
+        frase = f"Materia: {materia}"
+        if profesor:
+            frase += f", dictada por {profesor}"
+        if dia or hora_inicio or hora_fin:
+            horario = []
+            if dia:
+                horario.append(f"los {dia}")
+            if hora_inicio and hora_fin:
+                horario.append(f"de {hora_inicio} a {hora_fin}")
+            if horario:
+                frase += f", {' '.join(horario)}"
+        return frase
+
+    # Detectar campos numéricos típicos de estadísticas
+    contador = None
+    for key in ['cantidad', 'count', 'num_clases', 'horas_totales', 'total', 'valor']:
+        if datos.get(key) is not None:
+            contador = datos.get(key)
+            break
+
+    if contador is not None and len(columnas) == 1:
+        return f"Valor: {contador}"
+
+    if contador is not None:
+        partes.append(f"Cantidad: {contador}")
+    for col in columnas:
+        if col.lower() in ['cantidad', 'count', 'num_clases', 'horas_totales', 'total', 'valor']:
+            continue
+        valor = fila.get(col)
+        if valor not in (None, ''):
+            partes.append(f"{col}: {valor}")
+    if partes:
+        return "; ".join(partes)
+
+    # Fallback genérico legible
+    partes = []
+    for col in columnas:
+        valor = fila.get(col)
+        if valor is not None and valor != '':
+            partes.append(f"{col}: {valor}")
+    return "; ".join(partes) if partes else "Registro sin datos legibles"
+
+
 def _generar_respuesta_datos(columnas, filas):
-    """Genera respuesta determinista COMPLETA a partir de los datos de la BD.
-    
-    CRÍTICO: Mostrar TODOS los datos relevantes. Ollama necesita contexto completo
-    para interpretar correctamente y generar respuestas acertadas.
-    """
+    """Genera una respuesta natural y legible directamente desde los datos."""
     if not columnas or not filas:
         return "No encontré datos para esa consulta."
 
-    # SIEMPRE mostrar TODOS los datos disponibles de forma legible
-    if len(filas) == 1:
-        # Un solo registro: mostrar TODOS los campos
-        fila = filas[0]
-        partes = []
-        for col in columnas:
-            valor = fila.get(col, '(no disponible)')
-            partes.append(f"{col}: {valor}")
-        return "Resultado encontrado: " + " | ".join(partes)
-    
-    elif len(filas) <= 10:
-        # 2-10 registros: listar TODOS de forma clara y completa
-        lineas = [f"--- {len(filas)} Resultado(s) ---"]
+    total = len(filas)
+    if total == 1:
+        return f"Encontré 1 registro. {_formatear_fila_natural(filas[0], columnas)}"
+
+    if total <= 5:
+        lineas = [f"Encontré {total} resultados:"]
         for idx, fila in enumerate(filas, 1):
-            partes = []
-            # Mostrar TODOS los campos, no solo algunos
-            for col in columnas:
-                valor = fila.get(col, '')
-                if valor and valor not in ('', None):
-                    partes.append(f"{col}={valor}")
-            lineas.append(f"{idx}. {' | '.join(partes)}")
+            lineas.append(f"{idx}. {_formatear_fila_natural(fila, columnas)}")
         return "\n".join(lineas)
-    
-    else:
-        # Más de 10 registros: mostrar todos pero agrupados
-        lineas = [f"--- {len(filas)} Resultados (mostrando todos) ---"]
-        for idx, fila in enumerate(filas, 1):
-            valores = []
-            for col in columnas[:5]:  # Primeros 5 campos relevantes
-                valor = fila.get(col, '')
-                if valor:
-                    valores.append(str(valor))
-            lineas.append(f"{idx}. {' • '.join(valores)}")
-        return "\n".join(lineas)
+
+    # Más de 5 resultados: resumir y mostrar los primeros 5
+    lineas = [f"Encontré {total} resultados. Aquí están los primeros 5:"]
+    for idx, fila in enumerate(filas[:5], 1):
+        lineas.append(f"{idx}. {_formatear_fila_natural(fila, columnas)}")
+    lineas.append(f"... y {total - 5} resultados más.")
+    return "\n".join(lineas)
 
 
 def _truncar_respuesta_si_es_necesario(respuesta, max_caracteres=5000):
@@ -135,7 +235,7 @@ def _truncar_respuesta_si_es_necesario(respuesta, max_caracteres=5000):
     return truncado
 
 
-def generar_respuesta(pregunta, resultado, timeout=60):
+def generar_respuesta(pregunta, resultado, timeout=None):
     """
     Genera una respuesta natural en lenguaje humano usando Ollama.
     CRÍTICO: Serializa filas ANTES de pasar a Ollama.
@@ -143,9 +243,11 @@ def generar_respuesta(pregunta, resultado, timeout=60):
     Args:
         pregunta: La pregunta del usuario
         resultado: Resultado de la BD con columnas y filas
-        timeout: Timeout en segundos para Ollama (default 120s)
+        timeout: Timeout en segundos para Ollama (default from config)
     """
-    from config import AI_NAME
+    from config import AI_NAME, OLLAMA_TIMEOUT
+    if timeout is None:
+        timeout = OLLAMA_TIMEOUT
     
     logger.info(f"Generando respuesta para pregunta: {pregunta}")
     
@@ -188,7 +290,7 @@ def generar_respuesta(pregunta, resultado, timeout=60):
                     datos_texto += " | ".join(pares)
                 
                 prompt = prompt_respuesta(pregunta, datos_texto)
-                response = llamar_llm(prompt, timeout=timeout)
+                response = llamar_llm(prompt, max_tokens=MAX_TOKENS_RESPUESTA, timeout=timeout)
                 
                 if response and not response.startswith("Error:") and len(response.strip()) >= 10:
                     # Validar que la respuesta incluye datos relevantes del resultado para evitar respuestas genéricas.
@@ -265,7 +367,7 @@ def generar_respuesta(pregunta, resultado, timeout=60):
     # Generar respuesta con Ollama
     logger.info(f"[PASO 3] Generando respuesta con Ollama (timeout={timeout}s)...")
     prompt = prompt_respuesta(pregunta, datos_texto)
-    response = llamar_llm(prompt, timeout=timeout)
+    response = llamar_llm(prompt, max_tokens=MAX_TOKENS_RESPUESTA, timeout=timeout)
 
     if response.startswith("Error:") or not response or len(response.strip()) < 5:
         logger.error(f"Ollama no genero respuesta valida: {response}")

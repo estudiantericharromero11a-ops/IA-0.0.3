@@ -1,25 +1,25 @@
-# THANIA IA - Sistema Universitario (v0.0.3)
+# THANIA - Sistema de Consultas Universitarias (v0.0.3)
 
 ## ¿Qué es THANIA?
 
-THANIA es un **asistente inteligente** que responde preguntas sobre una universidad (datos sobre profesores, clases, horarios, instalaciones, etc.) **sin necesidad de escribir código ni queries SQL**.
+THANIA es un sistema que permite consultar información sobre una universidad (datos sobre profesores, clases, horarios, instalaciones, etc.) mediante preguntas en lenguaje natural.
 
 En lugar de escribir comandos complicados, puedes hacer preguntas naturales como:
 - "¿Quiénes son los profesores de matemáticas?"
 - "¿Dónde se dicta física?"
 - "¿Cuál es el horario de la clase de programación?"
 
-Y **THANIA automáticamente**:
-1. Entiende tu pregunta con IA
+Y THANIA automáticamente:
+1. Procesa tu pregunta
 2. Busca la información en la base de datos
 3. Te da una respuesta clara en español
 
 ### ¿Cómo funciona internamente?
 
-THANIA usa tres tecnologías principales:
+THANIA integra tres tecnologías principales:
 
-- **RAG (Retrieval-Augmented Generation)**: Un sistema que primero busca información relevante, luego genera respuestas precisas.
-- **LLM (Modelo de Lenguaje)**: Usa Ollama + llama3 para entender preguntas de lenguaje natural.
+- **Búsqueda Semántica**: Un sistema que busca información relevante basada en significado.
+- **Modelos de Lenguaje**: Usa procesamiento de lenguaje natural para entender preguntas.
 - **PostgreSQL**: Base de datos que almacena toda la información de la universidad.
 
 ---
@@ -40,7 +40,7 @@ Antes de empezar, asegúrate de tener instalado:
   - Para clonar el repositorio
 
 - **Ollama** (descarga desde https://ollama.ai/)
-  - Necesario para el modelo de IA llama3
+  - Necesario para el modelo llama3
   - Ejecuta en una terminal: `ollama serve`
   - Si no está el modelo: `ollama pull llama3`
 
@@ -130,15 +130,15 @@ python scripts/seed_data.py
 
 Esto inserta datos básicos (campus, bloques, personas, etc.).
 
-### Paso 7: Carga el contexto semántico (IA)
+### Paso 7: Carga el contexto semántico
 
 ```bash
 python scripts/poblar_conocimiento.py
 ```
 
-Esto prepara el sistema de IA con información sobre la estructura de la base de datos.
+Esto prepara el sistema con información sobre la estructura de la base de datos.
 
-### Paso 8: ¡Ejecuta la aplicación!
+### Paso 8: Ejecuta la aplicación
 
 ```bash
 python app.py
@@ -154,7 +154,7 @@ Sistema Universitario THANIA - MODO LOCAL INTERACTIVO
 Tu pregunta: 
 ```
 
-¡Ahora puedes hacer preguntas! Intenta:
+Ahora puedes hacer preguntas. Intenta:
 ```
 Tu pregunta: ¿Quiénes son los profesores?
 ```
@@ -189,12 +189,31 @@ Aquí puedes hacer preguntas una por una. Escribe `salir` para terminar.
 python app.py "¿Quiénes son los profesores?"
 ```
 
-### Modo Telegram (opcional)
-
-Si configuraste un token de Telegram en `.env`:
+### Modo Web API (para integración con frontend)
 
 ```bash
-python app.py --telegram
+python app.py --web
+```
+
+Esto inicia un servidor FastAPI en `http://localhost:8000` con endpoints REST:
+
+- `GET /` - Estado del servidor
+- `POST /query` - Enviar pregunta (JSON: `{"query": "tu pregunta"}`)
+
+**Ejemplo de uso con curl:**
+```bash
+curl -X POST "http://localhost:8000/query" \
+     -H "Content-Type: application/json" \
+     -d '{"query": "¿Quiénes son los profesores?"}'
+```
+
+**Respuesta:**
+```json
+{
+  "response": "Los profesores registrados son: Juan Pérez (Matemáticas), María García (Física)...",
+  "sql": "SELECT * FROM personas WHERE rol = 'profesor'",
+  "status": "success"
+}
 ```
 
 ---
@@ -206,11 +225,11 @@ IA 0.0.3/
 ├── app.py                    # Punto de entrada - interfaz de usuario
 ├── config.py                 # Configuración principal
 │
-├── ai/                       # Módulo de Inteligencia Artificial
-│   ├── retrieval.py         # Busca información (RAG)
-│   ├── llm.py               # Comunicación con Ollama
-│   ├── prompts_optimizados.py # Plantillas de preguntas al LLM
-│   └── config_ia.py         # Palabras clave del sistema
+├── ai/                       # Módulo de Procesamiento de Lenguaje
+│   ├── retrieval.py         # Busca información relevante
+│   ├── llm.py               # Comunicación con modelos de lenguaje
+│   ├── prompts_optimizados.py # Plantillas de procesamiento
+│   └── config_ia.py         # Configuración del sistema
 │
 ├── pipeline/                 # Flujo de procesamiento
 │   ├── generate_sql.py       # Genera SQL desde preguntas
@@ -235,11 +254,11 @@ IA 0.0.3/
 
 **ai/retrieval.py**
 - Busca información relevante en la base de datos
-- Usa embeddings (vectores) para entender el significado, no solo palabras exactas
+- Usa vectores para entender el significado, no solo palabras exactas
 
 **pipeline/generate_sql.py**
 - Convierte tu pregunta en lenguaje natural a SQL
-- Usa el modelo IA para generar queries que busquen exactamente lo que preguntaste
+- Usa procesamiento de lenguaje para generar queries que busquen exactamente lo que preguntaste
 
 **pipeline/execute_query.py**
 - Ejecuta la consulta SQL en PostgreSQL
@@ -247,7 +266,7 @@ IA 0.0.3/
 
 **pipeline/human_response.py**
 - Toma los datos de la base de datos y genera una respuesta en español
-- Asegura que la respuesta sea útil y no técnica
+- Asegura que la respuesta sea clara y legible
 
 ---
 
@@ -275,8 +294,8 @@ THANIA organiza la información en 14 tablas:
 - **asignacion_instalaciones**: Conecta: profesor + materia + aula + horario
   - Responde: ¿Quién enseña? ¿Qué? ¿Dónde? ¿Cuándo?
 
-### Tabla de IA
-- **conocimiento**: Almacena información para el sistema de IA con embeddings
+### Tabla de Conocimiento
+- **conocimiento**: Almacena información semántica con vectores
 
 ---
 
@@ -302,8 +321,8 @@ python scripts/seed_data.py
 python scripts/poblar_conocimiento.py
 ```
 
-### La IA no entiende mis preguntas
-**Problema:** El contexto de IA podría estar incompleto.
+### El sistema no procesa correctamente mis preguntas
+**Problema:** El contexto podría estar incompleto.
 **Solución:** Recarga el contexto:
 ```bash
 python scripts/poblar_conocimiento.py

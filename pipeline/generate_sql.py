@@ -141,13 +141,31 @@ def _heuristica_sql_simple(pregunta):
     ])
     tiene_horario = any(k in pregunta_lower for k in [
         'lunes', 'martes', 'miércoles', 'miercoles', 'jueves', 'viernes', 'sabado', 'sábado', 'domingo',
-        'horario', 'dia', 'día', 'clases'
+        'horario', 'dia', 'día', 'clases', 'semana'
     ])
     tiene_correo = any(k in pregunta_lower for k in [
         'correo', 'email', 'contacto', 'telefono', 'teléfono', 'dato de contacto', 'datos de contacto'
     ])
     tiene_aula = any(k in pregunta_lower for k in ['aula', 'laboratorio', 'oficina'])
     tiene_ubicacion = any(k in pregunta_lower for k in ['dónde', 'donde', 'Ubicación'.lower(), 'ubicación', 'ubicacion', 'piso', 'campus'])
+    
+    # ⭐ NUEVA DETECCIÓN: Preguntas sobre "MÁS" (estadísticas con agregación)
+    tiene_mas = any(k in pregunta_lower for k in ['mas', 'más', 'mayor', 'máximo', 'máxima', 'maximo', 'maxima', 'cuantos'])
+    tiene_horas = any(k in pregunta_lower for k in ['horas', 'hora', 'tiempo', 'duración', 'duracion'])
+
+    # ⭐ CASO NUEVO: "Profesor con más horas de clase"
+    if tiene_profesor and tiene_horas and tiene_mas:
+        return (
+            "SELECT "
+            "p.nombre AS profesor, "
+            "COUNT(DISTINCT a.id_asignacion) AS num_clases, "
+            "SUM(EXTRACT(EPOCH FROM (a.hora_fin - a.hora_inicio))/3600)::DECIMAL AS horas_totales "
+            "FROM asignacion_instalaciones a "
+            "INNER JOIN personas p ON a.id_persona = p.id_persona "
+            "GROUP BY p.id_persona, p.nombre "
+            "ORDER BY horas_totales DESC "
+            "LIMIT 1"
+        )
 
     if tiene_aula and (tiene_ubicacion or tiene_capacidad_total or 'capacidad' in pregunta_lower):
         # Extraer número o identificador de aula/laboratorio/oficina si existe
@@ -626,7 +644,8 @@ def _validar_no_parametros(sql):
         errores.append(f"Contiene variables SQL sin asignar: {', '.join(dollar_vars)}")
 
     # 5. Detectar placeholders nombrados (ej: :nombre, @variable)
-    named_placeholders = re.findall(r'[@:]\w+', sql)
+    # PERO: excluir PostgreSQL casts (::tipo) - no es un parámetro con negative lookbehind
+    named_placeholders = re.findall(r'(?<!:)[:@]\w+', sql)
     if named_placeholders:
         errores.append(f"Contiene placeholders nombrados: {', '.join(named_placeholders)}")
 

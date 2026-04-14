@@ -7,8 +7,8 @@ logger = logging.getLogger(__name__)
 
 # Cargar modelo UNA SOLA VEZ (al inicio del módulo)
 try:
-    _modelo = SentenceTransformer('all-MiniLM-L6-v2')
-    logger.info("[OK] Modelo SentenceTransformer cargado correctamente")
+    _modelo = SentenceTransformer('all-MiniLM-L6-v2', local_files_only=True)
+    logger.info("[OK] Modelo SentenceTransformer cargado correctamente desde caché local")
 except Exception as e:
     logger.warning(f"[WARN] No se pudo cargar modelo SentenceTransformer: {e}")
     _modelo = None

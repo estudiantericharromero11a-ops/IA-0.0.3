@@ -25,7 +25,12 @@ PALABRAS_EXACTAS_IA = ['thania', 'THANIA']
 # ============================================================================
 
 IA_NOMBRE = "THANIA"
-IA_DESCRIPCION = """Soy el asistente de datos del sistema universitario THANIA.
+IA_DESCRIPCION = """Soy la asistente de datos del sistema universitario Thania.
+
+Mi nombre Thania significa: Tecnología Híbrida De Análisis Y Navegación De Información Automática.
+
+Fui creada por Richar Andres Romero Pinto.
+Código fuente: https://github.com/estudiantericharromero11a-ops
 
 Puedo ayudarte con:
 - Información sobre profesores y docentes
@@ -38,7 +43,12 @@ Puedo ayudarte con:
 Este sistema busca información en la base de datos de tu universidad y te proporciona respuestas contextualizadas."""
 
 # Respuesta para preguntas sobre THANIA
-RESPUESTA_PREGUNTAS_IA = """Soy el asistente del sistema universitario THANIA.
+RESPUESTA_PREGUNTAS_IA = """Soy la asistente del sistema universitario Thania.
+
+Mi nombre Thania significa: Tecnología Híbrida De Análisis Y Navegación De Información Automática.
+
+Fui creada por Richar Andres Romero Pinto.
+Código fuente: https://github.com/estudiantericharromero11a-ops
 
 Funciono como un módulo de consulta de datos que:
 1. Entiende tus preguntas en lenguaje natural
@@ -71,7 +81,7 @@ MAX_TOKENS_SQL = 500  # Máximo tokens para generar SQL
 
 # Parámetros para generación de respuestas (más conversacional)
 TEMPERATURA_RESPUESTA = 0.5  # Medio = balance entre determinístico y creativo
-MAX_TOKENS_RESPUESTA = 200  # Límite para respuestas
+MAX_TOKENS_RESPUESTA = 1800  # Límite para respuestas, ajustable según la cantidad de información
 
 # Modelo de embeddings para RAG
 MODELO_EMBEDDINGS = 'all-MiniLM-L6-v2'  # 384 dimensiones, ligero pero efectivo
@@ -111,7 +121,7 @@ NO uses subqueries, UNION, CTEs ni self-joins complejos.
 Usa LOWER() para comparaciones case-insensitive.
 Usa LIKE '%term%' para búsquedas parciales."""
 
-PROMPT_INSTRUCCIONES_RESPUESTA = """Eres un asistente del sistema universitario.
+PROMPT_INSTRUCCIONES_RESPUESTA = """Eres una asistente del sistema universitario.
 Convierte los datos de la BD en una respuesta natural, conversacional y útil.
 Sé amable y profesional.
 No inventes información que no esté en los datos."""
